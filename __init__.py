@@ -85,6 +85,7 @@ from .kv_cache_quant import (
     PerTokenKVCacheQuantizer, PerChannelKVCacheQuantizer,
     PerGroupKVCacheQuantizer, kv_cache_memory_ratio,
 )
+from .mixed_precision import MixedPrecision, MixedPrecisionLinear, select_protected
 
 __all__ = [
     # Core
@@ -118,4 +119,6 @@ __all__ = [
     "KVQuantGranularity", "KVCacheQuantizer", "QuantizedKVCache",
     "PerTokenKVCacheQuantizer", "PerChannelKVCacheQuantizer",
     "PerGroupKVCacheQuantizer", "kv_cache_memory_ratio",
+    # Mixed precision
+    "MixedPrecision", "MixedPrecisionLinear", "select_protected",
 ]

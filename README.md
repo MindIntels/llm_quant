@@ -17,6 +17,7 @@ LLM post-training quantization (PTQ) and fine-tuning algorithms.
 | **GPTQ** | Frantar et al., 2023 | W4 | Second-order Hessian-based column-wise OBQ |
 | **QLoRA** | Dettmers et al., 2023 | NF4+LoRA | 4-bit NormalFloat base + trainable low-rank adapters |
 | **KV Cache Quant** | Hooper et al., 2024 | INT4/INT8 | Per-token / per-channel / per-group KV cache quantization |
+| **Mixed Precision** | — | mixed | Protect important output channels at a higher bit-width, drop the rest |
 
 ## Project Structure
 
@@ -43,6 +44,7 @@ llm_quant/
 ├── gptq.py                  # GPTQ
 ├── qlora.py                 # QLoRA (NF4 + LoRA)
 ├── kv_cache_quant.py        # KV cache quantization
+├── mixed_precision.py       # Mixed precision (importance-aware channel protection)
 │
 └── tests/                   # 13 test files
     ├── test_quantizer.py
@@ -131,7 +133,19 @@ from llm_quant import PerTokenKVCacheQuantizer, QuantizedKVCache
 cache = QuantizedKVCache(num_layers=32,
             quantizer=PerTokenKVCacheQuantizer(n_bits=4))
 full_k, full_v = cache.update(layer_idx=0, key=k, value=v)
+
+# ── Mixed Precision (protect important channels) ──────
+mp = llm_quant.MixedPrecision(bits_high=8, bits_low=4, protect_frac=0.01)
+ml = mp.quantize_linear(linear, importance=channel_scores)  # top 1% -> int8
+# or hand it an explicit mask instead of a score:
+ml = mp.quantize_linear(linear, protect_mask=mask)
+print(ml.effective_bits)   # channel-count-weighted average bit-width
 ```
+
+`importance` is any per-output-channel score you trust (activation magnitude, a
+sensitivity scan, etc.) — the top `protect_frac` channels are kept at `bits_high`
+and everything else goes to `bits_low`. Pass `protect_mask` directly if you'd
+rather choose the channels yourself.
 
 ## Core Utilities
 
